@@ -7,7 +7,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('netbox_dns', '0030_dnsseckeytemplate_comments_dnsseckeytemplate_owner_and_more'),
+        ('netbox_dns', '0001_squashed_netbox_dns_0_22'),
         ('netbox_plugin_bind_provisioner', '0003_catalogzonememberidentifier'),
     ]
 
