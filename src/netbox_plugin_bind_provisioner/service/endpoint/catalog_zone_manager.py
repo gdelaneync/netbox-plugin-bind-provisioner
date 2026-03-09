@@ -145,7 +145,8 @@ def create_zone(name, view_name) -> dns.zone.Zone:
         rdataset.add(rdata, ttl)
 
         # Configure DNSSec Policy for member Zone if DNSSec is enabled
-        if nb_zone.dnssec_policy:
+        # (dnssec_policy only exists in netbox-plugin-dns >= 1.3.0)
+        if getattr(nb_zone, 'dnssec_policy', None):
             # Configure policy
             rid = dns.name.from_text("group", ptr_name)
             policy_name = nb_zone.dnssec_policy.name.rstrip(" ")
