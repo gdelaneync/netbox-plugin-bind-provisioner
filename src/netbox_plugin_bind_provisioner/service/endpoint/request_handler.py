@@ -318,6 +318,8 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
             return
 
         key_name = query.keyname.canonicalize().to_text()
+        qtype_str = dns.rdatatype.to_text(qtype)
+        logger.debug(f"Request from {peer}: {qtype_str} {dname} key={key_name}")
 
         # Check if the key matches a view
         nb_view = self.server.tsig_view_map.get(key_name)
@@ -328,21 +330,28 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
             self._deny_request(query)
             return
 
+        logger.debug(f"Request from {peer}: key={key_name} resolved to view='{nb_view.name}'")
+
         # Check if catalog zone
         if dname == "catz" or dname == f"{nb_view.name}.catz":
+            logger.debug(f"Request from {peer}: serving catalog zone '{dname}' for view='{nb_view.name}'")
             zone = catzm.create_zone(dname, nb_view.name)
         else:
+            logger.debug(f"Request from {peer}: looking up zone='{dname}' in view='{nb_view.name}'")
             zone = self._getZoneFromNB(dname, nb_view.name)
+
         # When zone was not found, let client know
         if not zone:
-            logger.warning(f"Zone {dname} not found in view {nb_view.name}")
+            logger.warning(f"Request from {peer}: zone='{dname}' not found in view='{nb_view.name}'")
             self._deny_request(query)
             return
+
+        logger.debug(f"Request from {peer}: zone='{dname}' found in view='{nb_view.name}', serving {qtype_str}")
 
         # Retrieve the existing SOA record from the Zone
         soa_rrset = zone.get_rdataset(zone.origin, dns.rdatatype.SOA)
         if soa_rrset is None:
-            logger.error(f"Zone {dname} has no SOA — aborting")
+            logger.error(f"Zone '{dname}' in view='{nb_view.name}' has no SOA — aborting")
             return
 
         if qtype == dns.rdatatype.SOA:
