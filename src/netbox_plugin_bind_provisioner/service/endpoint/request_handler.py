@@ -107,7 +107,7 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
 
                 # Check if the rdataset has any rdata before creating an RRset
                 if not rdataset:
-                    logger.debug(f"Skipping empty rdataset for {name} {rdtype}")
+                    logger.info(f"Skipping empty rdataset for {name} {rdtype}")
                     continue  # Skip empty rdataset
 
                 # Replace the rdataset for the given name and type
@@ -179,7 +179,7 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
 
         data = response.to_wire(max_size=512)
         self._send_response(data)
-        logger.debug(f"{peer} SOA {nb_view.name}/{dname}")
+        logger.info(f"{peer} SOA {nb_view.name}/{dname}")
 
     def _handle_axfr_request(self, query, zone, peer, nb_view, dname) -> None:
         rrsets = []
@@ -212,9 +212,9 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
         # 3. Loop through RRsets
         tsig_ctx = None
         for rrset in rrsets:
-            # logger.debug(f"Iterating over rrset {rrset}. tsig_ctx: {tsig_ctx}")
+            # logger.info(f"Iterating over rrset {rrset}. tsig_ctx: {tsig_ctx}")
             try:
-                # logger.debug(f"Adding {rrset} to renderer object")
+                # logger.info(f"Adding {rrset} to renderer object")
                 r.add_rrset(dns.renderer.ANSWER, rrset)
                 if r.max_size - len(r.output.getvalue()) < self.RESERVED_TSIG:
                     raise dns.exception.TooBig("TSIG wont fit")
@@ -250,7 +250,7 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
 
         # 4. Final message with terminating TSIG
         r.write_header()
-        # logger.debug(f"Final message. tsig_ctx: {tsig_ctx}")
+        # logger.info(f"Final message. tsig_ctx: {tsig_ctx}")
         tsig_ctx = r.add_multi_tsig(
             ctx=tsig_ctx,
             secret=self.server.keyring[query.keyname],
@@ -265,7 +265,7 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
         wire = r.get_wire()
         self._send_response(wire)
 
-        logger.debug(f"{peer} AXFR {nb_view.name}/{dname}")
+        logger.info(f"{peer} AXFR {nb_view.name}/{dname}")
 
     def _handle_dns_query(self, wire) -> None:
         peer = self.client_address[0]
@@ -319,7 +319,7 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
 
         key_name = query.keyname.canonicalize().to_text()
         qtype_str = dns.rdatatype.to_text(qtype)
-        logger.debug(f"Request from {peer}: {qtype_str} {dname} key={key_name}")
+        logger.info(f"Request from {peer}: {qtype_str} {dname} key={key_name}")
 
         # Check if the key matches a view
         nb_view = self.server.tsig_view_map.get(key_name)
@@ -330,14 +330,14 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
             self._deny_request(query)
             return
 
-        logger.debug(f"Request from {peer}: key={key_name} resolved to view='{nb_view.name}'")
+        logger.info(f"Request from {peer}: key={key_name} resolved to view='{nb_view.name}'")
 
         # Check if catalog zone
         if dname == "catz" or dname == f"{nb_view.name}.catz":
-            logger.debug(f"Request from {peer}: serving catalog zone '{dname}' for view='{nb_view.name}'")
+            logger.info(f"Request from {peer}: serving catalog zone '{dname}' for view='{nb_view.name}'")
             zone = catzm.create_zone(dname, nb_view.name)
         else:
-            logger.debug(f"Request from {peer}: looking up zone='{dname}' in view='{nb_view.name}'")
+            logger.info(f"Request from {peer}: looking up zone='{dname}' in view='{nb_view.name}'")
             zone = self._getZoneFromNB(dname, nb_view.name)
 
         # When zone was not found, let client know
@@ -346,7 +346,7 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
             self._deny_request(query)
             return
 
-        logger.debug(f"Request from {peer}: zone='{dname}' found in view='{nb_view.name}', serving {qtype_str}")
+        logger.info(f"Request from {peer}: zone='{dname}' found in view='{nb_view.name}', serving {qtype_str}")
 
         # Retrieve the existing SOA record from the Zone
         soa_rrset = zone.get_rdataset(zone.origin, dns.rdatatype.SOA)
@@ -415,7 +415,7 @@ class TCPRequestHandler(DNSBaseRequestHandler):
                 self._handle_dns_query(wire)
 
         except socket.timeout:
-            logger.debug(f"Connection from {peer} timed out")
+            logger.info(f"Connection from {peer} timed out")
         except Exception as e:
             logger.error(f"Error handling request from {peer}: {e}")
             import traceback
