@@ -224,5 +224,5 @@ def _generate_member_identifier() -> None:
 def update_member_identifier(zone: Zone) -> None:
     CatalogZoneMemberIdentifier.objects.update_or_create(
         zone=zone,
-        defaults={"name": _generate_member_identifier},
+        defaults={"name": _generate_member_identifier()},
     )
