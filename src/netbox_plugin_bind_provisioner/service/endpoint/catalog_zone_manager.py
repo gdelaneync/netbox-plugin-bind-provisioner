@@ -216,6 +216,9 @@ def create_zone(name, view_name) -> dns.zone.Zone:
     txt_node = zone.find_node(version_name, create=True)
     txt_node.rdatasets.append(txt_rdataset)
 
+    for n, rd in zone.iterate_rdatasets():
+        logger.debug(f"create_zone final contents: {n} {rd}")
+
     return zone
 
 def _generate_member_identifier() -> None:
