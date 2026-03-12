@@ -40,7 +40,6 @@ class Command(BaseCommand):
     def load_tsig_key_settings(self):
         self.keyring = {}
         self.tsig_view_map = {}
-        self.catalog_zone_map = {}  # view_name -> catalog_zone_name
 
         for view_name, data in self.tsig_keys.items():
             raw_key_name = data.get("keyname")
@@ -71,13 +70,7 @@ class Command(BaseCommand):
                 name=key_name_obj, secret=secret, algorithm=algorithm_str
             )
             self.tsig_view_map[key_name_str] = nb_view
-
-            catalog_zone = data.get("catalog_zone", None)
-            if catalog_zone:
-                self.catalog_zone_map[nb_view.name] = catalog_zone
-                logger.debug(f"Loaded TSIG key: {key_name_str} view: {nb_view.name} catalog_zone: {catalog_zone}")
-            else:
-                logger.debug(f"Loaded TSIG key: {key_name_str} view: {nb_view.name}")
+            logger.debug(f"Loaded TSIG key: {key_name_str} view: {nb_view.name}")
 
         if not self.keyring:
             msg = "No TSIG keys found in database."
@@ -103,11 +96,11 @@ class Command(BaseCommand):
         self.load_tsig_key_settings()
 
         udp_server = UDPDNSServer(
-            (address, port), UDPRequestHandler, self.keyring, self.tsig_view_map, self.catalog_zone_map
+            (address, port), UDPRequestHandler, self.keyring, self.tsig_view_map
         )
 
         tcp_server = TCPDNSServer(
-            (address, port), TCPRequestHandler, self.keyring, self.tsig_view_map, self.catalog_zone_map
+            (address, port), TCPRequestHandler, self.keyring, self.tsig_view_map
         )
 
         def run_udp_server(server):

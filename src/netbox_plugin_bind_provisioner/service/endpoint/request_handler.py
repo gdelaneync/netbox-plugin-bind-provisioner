@@ -333,8 +333,7 @@ class DNSBaseRequestHandler(socketserver.BaseRequestHandler):
         logger.info(f"Request from {peer}: key={key_name} resolved to view='{nb_view.name}'")
 
         # Check if catalog zone
-        catalog_zone_name = self.server.catalog_zone_map.get(nb_view.name)
-        if catalog_zone_name and dname == catalog_zone_name:
+        if dname == "catz" or dname == f"{nb_view.name}.catz":
             logger.info(f"Request from {peer}: serving catalog zone '{dname}' for view='{nb_view.name}'")
             zone = catzm.create_zone(dname, nb_view.name)
         else:
