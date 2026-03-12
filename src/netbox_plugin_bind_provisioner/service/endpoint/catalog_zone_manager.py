@@ -217,7 +217,7 @@ def create_zone(name, view_name) -> dns.zone.Zone:
     txt_node.rdatasets.append(txt_rdataset)
 
     for n, rd in zone.iterate_rdatasets():
-        logger.debug(f"create_zone final contents: {n} {rd}")
+        logger.info(f"create_zone final contents: {n} {rd}")
 
     return zone
 
